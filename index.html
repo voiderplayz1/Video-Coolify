@@ -2,1395 +2,1146 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VizFX — Make Your Video Cool</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VFXAI — Make My Video Cool</title>
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #1a1a25;
-    --border: rgba(255,255,255,0.08);
-    --accent: #00e5ff;
-    --accent2: #7b2fff;
-    --text: #f0f0f8;
-    --muted: #6b6b85;
-    --danger: #ff4060;
-    --success: #00e5a0;
-    --radius: 12px;
-    --device: 'pc';
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── NOISE TEXTURE ── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none; z-index: 0; opacity: 0.4;
-  }
-
-  /* ── DEVICE POPUP ── */
-  .popup-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.92);
-    backdrop-filter: blur(12px);
-    z-index: 9999;
-    display: flex; align-items: center; justify-content: center;
-    animation: fadeIn 0.3s ease;
-  }
-
-  .popup-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 48px 40px;
-    max-width: 460px;
-    width: 90%;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .popup-card::before {
-    content: '';
-    position: absolute;
-    top: -80px; left: 50%; transform: translateX(-50%);
-    width: 300px; height: 200px;
-    background: radial-gradient(ellipse, rgba(0,229,255,0.15) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .popup-emoji { font-size: 36px; margin-bottom: 16px; display: block; }
-
-  .popup-card h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    line-height: 1.4;
-    margin-bottom: 8px;
-  }
-
-  .popup-card h2 span { color: var(--accent); }
-
-  .popup-subtitle {
-    color: var(--muted);
-    font-size: 12px;
-    margin-bottom: 32px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .device-options { display: flex; flex-direction: column; gap: 12px; }
-
-  .device-btn {
-    display: flex; align-items: center; gap: 16px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px 24px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
-    width: 100%;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-  }
-
-  .device-btn:hover {
-    border-color: var(--accent);
-    background: rgba(0,229,255,0.05);
-    transform: translateY(-2px);
-  }
-
-  .device-btn .icon { font-size: 28px; }
-
-  .device-btn .label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; }
-  .device-btn .sublabel { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-  /* ── MAIN LAYOUT ── */
-  .app {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 40px 24px 80px;
-    position: relative; z-index: 1;
-  }
-
-  /* PC Layout */
-  body.pc .app { max-width: 900px; }
-
-  /* Mobile Layout */
-  body.mobile .app { max-width: 480px; padding: 20px 16px 60px; }
-
-  /* ── HEADER ── */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 48px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 22px;
-    letter-spacing: -0.02em;
-  }
-
-  .logo span { color: var(--accent); }
-
-  .logo-tag {
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-top: 2px;
-  }
-
-  .device-indicator {
-    font-size: 11px;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    padding: 6px 12px;
-    border-radius: 100px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .device-indicator:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* ── HERO ── */
-  .hero {
-    margin-bottom: 40px;
-  }
-
-  .hero h1 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: clamp(28px, 5vw, 52px);
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    margin-bottom: 12px;
-  }
-
-  .hero h1 .accent { color: var(--accent); }
-  .hero h1 .accent2 { color: var(--accent2); }
-
-  .hero p {
-    color: var(--muted);
-    font-size: 13px;
-    max-width: 480px;
-    line-height: 1.7;
-  }
-
-  /* ── STEPS ── */
-  .steps {
-    display: grid;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  body.pc .steps { grid-template-columns: 1fr 1fr; }
-  body.mobile .steps { grid-template-columns: 1fr; }
-
-  /* ── CARD ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    position: relative;
-    transition: border-color 0.2s;
-  }
-
-  .card:hover { border-color: rgba(0,229,255,0.2); }
-
-  .card-num {
-    font-size: 10px;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 12px;
-    font-weight: 500;
-  }
-
-  .card h3 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
-    margin-bottom: 16px;
-  }
-
-  /* ── UPLOAD ZONE ── */
-  .upload-zone {
-    border: 1.5px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 32px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: rgba(255,255,255,0.01);
-    position: relative;
-  }
-
-  .upload-zone:hover, .upload-zone.drag-over {
-    border-color: var(--accent);
-    background: rgba(0,229,255,0.04);
-  }
-
-  .upload-zone input[type="file"] {
-    position: absolute; inset: 0;
-    opacity: 0; cursor: pointer; width: 100%; height: 100%;
-  }
-
-  .upload-icon { font-size: 32px; margin-bottom: 8px; }
-  .upload-label { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-  .upload-sub { font-size: 11px; color: var(--muted); }
-
-  .file-info {
-    display: flex; align-items: center; gap: 10px;
-    background: rgba(0,229,255,0.07);
-    border: 1px solid rgba(0,229,255,0.2);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 12px;
-    margin-top: 12px;
-  }
-
-  .file-info .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .file-info .remove { color: var(--danger); cursor: pointer; font-size: 16px; flex-shrink: 0; }
-
-  /* ── EFFECT OPTIONS ── */
-  .effect-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-
-  .effect-option {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 14px 8px;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 11px;
-    text-align: center;
-    gap: 6px;
-    color: var(--muted);
-  }
-
-  .effect-option .eff-icon { font-size: 20px; }
-
-  .effect-option:hover { border-color: var(--accent2); color: var(--text); }
-
-  .effect-option.active {
-    border-color: var(--accent);
-    background: rgba(0,229,255,0.06);
-    color: var(--text);
-  }
-
-  .effect-option.active .eff-icon { filter: drop-shadow(0 0 6px var(--accent)); }
-
-  /* ── AUDIO SECTION ── */
-  .toggle-wrap {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
-  .toggle-label { font-size: 13px; font-weight: 500; }
-  .toggle-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-  .toggle {
-    position: relative;
-    width: 44px; height: 24px;
-    cursor: pointer;
-  }
-
-  .toggle input { opacity: 0; width: 0; height: 0; }
-
-  .toggle-track {
-    position: absolute; inset: 0;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    transition: 0.2s;
-  }
-
-  .toggle input:checked + .toggle-track {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-
-  .toggle-thumb {
-    position: absolute;
-    top: 3px; left: 3px;
-    width: 16px; height: 16px;
-    background: white;
-    border-radius: 50%;
-    transition: 0.2s;
-    pointer-events: none;
-  }
-
-  .toggle input:checked ~ .toggle-thumb { left: 23px; }
-
-  .audio-upload-section {
-    display: none;
-    margin-top: 12px;
-  }
-
-  .audio-upload-section.visible { display: block; }
-
-  /* ── CTA BUTTON ── */
-  .cta-wrap { margin-top: 24px; }
-
-  .cta-btn {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    width: 100%;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: var(--radius);
-    padding: 18px 32px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-    letter-spacing: 0.01em;
-  }
-
-  .cta-btn::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.4s;
-  }
-
-  .cta-btn:hover::before { transform: translateX(100%); }
-  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,229,255,0.35); }
-  .cta-btn:active { transform: translateY(0); }
-  .cta-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  /* ── PROGRESS ── */
-  .progress-wrap {
-    margin-top: 20px;
-    display: none;
-  }
-
-  .progress-wrap.visible { display: block; }
-
-  .progress-bar {
-    height: 4px;
-    background: var(--surface2);
-    border-radius: 100px;
-    overflow: hidden;
-    margin-bottom: 8px;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    border-radius: 100px;
-    transition: width 0.2s ease;
-    width: 0%;
-  }
-
-  .progress-text { font-size: 11px; color: var(--muted); text-align: center; }
-
-  /* ── PREVIEW SECTION ── */
-  .preview-section {
-    margin-top: 32px;
-    display: none;
-  }
-
-  .preview-section.visible { display: block; }
-
-  .preview-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
-  .preview-header h3 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 16px;
-  }
-
-  .preview-header .badge {
-    font-size: 10px;
-    background: rgba(0,229,160,0.1);
-    color: var(--success);
-    border: 1px solid rgba(0,229,160,0.3);
-    padding: 4px 10px;
-    border-radius: 100px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .video-preview {
-    width: 100%;
-    border-radius: 12px;
-    background: #000;
-    display: block;
-    border: 1px solid var(--border);
-    max-height: 400px;
-  }
-
-  .download-btn {
-    margin-top: 16px;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 24px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: var(--text);
-  }
-
-  .download-btn:hover {
-    border-color: var(--success);
-    color: var(--success);
-    background: rgba(0,229,160,0.05);
-  }
-
-  /* ── DOWNLOAD POPUP ── */
-  .dl-popup-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.8);
-    backdrop-filter: blur(8px);
-    z-index: 9998;
-    display: flex; align-items: center; justify-content: center;
-    animation: fadeIn 0.2s ease;
-  }
-
-  .dl-popup-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 36px 32px;
-    max-width: 380px;
-    width: 90%;
-    text-align: center;
-  }
-
-  .dl-popup-card h3 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 20px;
-    margin-bottom: 8px;
-  }
-
-  .dl-popup-card p { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
-
-  .dl-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-
-  .dl-option {
-    display: flex; align-items: center; gap: 14px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: left;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    width: 100%;
-  }
-
-  .dl-option:hover { border-color: var(--accent); background: rgba(0,229,255,0.05); }
-
-  .dl-option .fmt { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: var(--accent); width: 52px; flex-shrink: 0; }
-  .dl-option .dl-info .dl-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
-  .dl-option .dl-info .dl-sub { font-size: 11px; color: var(--muted); }
-
-  .dl-cancel {
-    font-size: 12px; color: var(--muted);
-    cursor: pointer; background: none; border: none; font-family: 'DM Mono', monospace;
-    transition: color 0.2s;
-  }
-
-  .dl-cancel:hover { color: var(--text); }
-
-  /* ── CANVAS (hidden processing) ── */
-  #processCanvas, #inputVideo { display: none; }
-
-  /* ── ANIMATIONS ── */
-  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
-
-  .app { animation: slideUp 0.5s ease 0.1s both; }
-
-  /* ── MOBILE SPECIFIC ── */
-  body.mobile .hero h1 { font-size: 32px; }
-  body.mobile header { margin-bottom: 28px; }
-  body.mobile .card { padding: 18px; }
-  body.mobile .effect-grid { grid-template-columns: 1fr 1fr; }
-
-  /* ── FOOTER ── */
-  footer {
-    text-align: center;
-    margin-top: 60px;
-    font-size: 11px;
-    color: var(--muted);
-    border-top: 1px solid var(--border);
-    padding-top: 24px;
-  }
-
-  footer span { color: var(--accent); }
-
-  /* ── STATUS INDICATOR ── */
-  .status-dot {
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--success);
-    margin-right: 6px;
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
-
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #080c10;
+  --surface: #0d1117;
+  --surface2: #111823;
+  --border: #1c2a3a;
+  --border2: #243040;
+  --accent: #e8f4ff;
+  --accent-glow: rgba(180,220,255,0.15);
+  --accent-dim: rgba(200,230,255,0.5);
+  --cyan: #4fc3f7;
+  --cyan-glow: rgba(79,195,247,0.2);
+  --green: #69f0ae;
+  --red: #ff6b6b;
+  --text: #c8d8e8;
+  --muted: #4a6070;
+  --mono: 'Share Tech Mono', monospace;
+  --sans: 'Rajdhani', sans-serif;
+  --r: 8px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100%;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* ══ SCANLINE BG ══════════════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px),
+    radial-gradient(ellipse at 50% 0%, rgba(30,60,100,0.25) 0%, transparent 65%);
+}
+
+/* ══ DEVICE POPUP ════════════════════════════════════════════ */
+#deviceOverlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(4, 8, 14, 0.97);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+#deviceOverlay.hidden { display: none; }
+
+.device-popup {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 48px 40px 40px;
+  max-width: 440px; width: 100%;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 0 60px rgba(79,195,247,0.06), 0 24px 48px rgba(0,0,0,0.6);
+  animation: popSlideIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes popSlideIn {
+  from { opacity: 0; transform: scale(0.88) translateY(24px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.device-popup .corner {
+  position: absolute; width: 14px; height: 14px;
+  border-color: var(--cyan); border-style: solid; opacity: 0.6;
+}
+.device-popup .corner.tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+.device-popup .corner.tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; }
+.device-popup .corner.bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; }
+.device-popup .corner.br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+
+.device-popup .eye {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  opacity: 0.8;
+}
+.device-popup h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1.55;
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+.device-popup .sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 36px;
+  letter-spacing: 0.05em;
+}
+
+.device-btn {
+  display: flex; align-items: center; gap: 18px;
+  width: 100%; padding: 18px 22px;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  cursor: pointer; margin-bottom: 12px;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  text-align: left; color: var(--text);
+  font-family: var(--sans);
+}
+.device-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(79,195,247,0.04);
+  box-shadow: 0 0 20px rgba(79,195,247,0.1);
+}
+.device-btn .icon { font-size: 30px; flex-shrink: 0; }
+.device-btn .lbl  { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; color: var(--accent); }
+.device-btn .desc { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+
+/* ══ HEADER ══════════════════════════════════════════════════ */
+header {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--mono); font-size: 15px;
+  color: var(--accent); letter-spacing: 0.08em;
+}
+.logo-pulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  animation: blink 1.8s ease-in-out infinite;
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.header-tag {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--muted); letter-spacing: 0.15em;
+}
+
+/* ══ MAIN ════════════════════════════════════════════════════ */
+.main {
+  position: relative; z-index: 1;
+  max-width: 780px; margin: 0 auto;
+  padding: 56px 24px 80px;
+}
+
+/* ══ HERO ════════════════════════════════════════════════════ */
+.hero { margin-bottom: 52px; }
+.hero-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--cyan); letter-spacing: 0.2em; text-transform: uppercase;
+  margin-bottom: 18px; padding: 5px 12px;
+  border: 1px solid rgba(79,195,247,0.25);
+  border-radius: 100px; background: rgba(79,195,247,0.05);
+}
+.hero-label span { width: 5px; height: 5px; border-radius: 50%; background: var(--cyan); animation: blink 1.2s infinite; }
+.hero h1 {
+  font-size: clamp(36px, 7vw, 62px);
+  font-weight: 700; line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.hero h1 em { color: var(--cyan); font-style: normal; }
+.hero p {
+  font-size: 15px; color: var(--muted);
+  max-width: 500px; line-height: 1.7;
+}
+
+/* ══ STEP LABELS ═════════════════════════════════════════════ */
+.step-label {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--cyan); letter-spacing: 0.2em; text-transform: uppercase;
+  margin-bottom: 10px; opacity: 0.7;
+}
+
+/* ══ UPLOAD ══════════════════════════════════════════════════ */
+.upload-area {
+  position: relative; margin-bottom: 20px;
+  border: 1.5px dashed var(--border2);
+  border-radius: 12px;
+  padding: 52px 32px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--surface);
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+  overflow: hidden;
+}
+.upload-area::after {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(79,195,247,0.05) 0%, transparent 70%);
+  opacity: 0; transition: opacity 0.3s;
+}
+.upload-area:hover, .upload-area.drag-over {
+  border-color: var(--cyan);
+  background: rgba(79,195,247,0.03);
+  box-shadow: 0 0 30px rgba(79,195,247,0.08);
+}
+.upload-area:hover::after, .upload-area.drag-over::after { opacity: 1; }
+.upload-area.has-file { border-style: solid; border-color: rgba(79,195,247,0.4); }
+.upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.upload-icon { font-size: 44px; margin-bottom: 14px; }
+.upload-area h3 { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 6px; letter-spacing: 0.01em; }
+.upload-area p  { font-size: 13px; color: var(--muted); font-family: var(--mono); }
+.file-chip {
+  display: none; margin-top: 14px;
+  font-family: var(--mono); font-size: 12px;
+  color: var(--cyan); background: rgba(79,195,247,0.1);
+  border: 1px solid rgba(79,195,247,0.2);
+  padding: 6px 14px; border-radius: 100px;
+  display: inline-block; display: none;
+}
+
+/* ══ OPTIONS CARD ════════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 14px; font-weight: 700;
+  color: var(--accent); letter-spacing: 0.05em;
+  margin-bottom: 22px; text-transform: uppercase;
+  font-family: var(--mono);
+}
+
+.toggle-row {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 20px;
+}
+.toggle-info .tlabel { font-size: 15px; font-weight: 700; color: var(--accent); }
+.toggle-info .tdesc  { font-size: 12px; color: var(--muted); margin-top: 4px; font-family: var(--mono); line-height: 1.6; max-width: 380px; }
+
+.toggle-switch {
+  flex-shrink: 0; width: 46px; height: 24px;
+  background: var(--border2); border-radius: 100px;
+  border: none; cursor: pointer; position: relative;
+  transition: background 0.25s;
+  outline: none;
+}
+.toggle-switch::after {
+  content: ''; position: absolute;
+  left: 3px; top: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%; background: var(--muted);
+  transition: transform 0.25s, background 0.25s;
+}
+.toggle-switch.active { background: rgba(79,195,247,0.25); }
+.toggle-switch.active::after { transform: translateX(22px); background: var(--cyan); }
+
+.audio-extra {
+  display: none; margin-top: 20px; padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.audio-extra.show { display: block; }
+
+.audio-pick {
+  position: relative;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px;
+  background: var(--bg);
+  border: 1px dashed var(--border2);
+  border-radius: var(--r);
+  cursor: pointer; width: 100%;
+  transition: border-color 0.2s;
+  font-family: var(--sans);
+  color: var(--text);
+}
+.audio-pick:hover { border-color: var(--cyan); }
+.audio-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.audio-pick .ap-icon { font-size: 22px; }
+.audio-pick .ap-label { font-size: 14px; font-weight: 700; color: var(--accent); }
+.audio-pick .ap-sub   { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+#audioName {
+  display: none; margin-top: 10px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--cyan);
+}
+
+/* ══ CONVERT BUTTON ══════════════════════════════════════════ */
+#convertBtn {
+  width: 100%; padding: 19px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--r);
+  color: var(--accent);
+  font-family: var(--sans); font-size: 17px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+  margin-bottom: 28px;
+}
+#convertBtn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(79,195,247,0.08), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.7s;
+}
+#convertBtn:not(:disabled):hover::before { transform: translateX(100%); }
+#convertBtn:not(:disabled):hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 30px rgba(79,195,247,0.15), 0 4px 20px rgba(0,0,0,0.4);
+  background: rgba(79,195,247,0.05);
+}
+#convertBtn:disabled {
+  opacity: 0.3; cursor: not-allowed;
+}
+
+/* ══ PROGRESS ════════════════════════════════════════════════ */
+#progressSection { display: none; margin-bottom: 28px; }
+#progressSection.show { display: block; }
+
+.prog-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 8px;
+}
+.prog-label { font-family: var(--mono); font-size: 11px; color: var(--cyan); }
+.prog-pct   { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+.prog-track {
+  height: 2px; background: var(--border);
+  border-radius: 100px; overflow: hidden; margin-bottom: 16px;
+}
+.prog-fill {
+  height: 100%; width: 0%;
+  background: var(--cyan);
+  border-radius: 100px;
+  box-shadow: 0 0 8px var(--cyan);
+  transition: width 0.4s ease;
+}
+.prog-steps { display: flex; gap: 8px; flex-wrap: wrap; }
+.pchip {
+  font-family: var(--mono); font-size: 10px;
+  padding: 3px 10px; border-radius: 100px;
+  border: 1px solid var(--border2); color: var(--muted);
+  transition: all 0.3s; letter-spacing: 0.05em;
+}
+.pchip.active { border-color: var(--cyan); color: var(--cyan); background: rgba(79,195,247,0.1); }
+.pchip.done   { border-color: transparent; color: var(--border2); }
+
+/* ══ RESULT ══════════════════════════════════════════════════ */
+#resultSection { display: none; }
+#resultSection.show { display: block; }
+.result-card {
+  background: #000;
+  border: 1px solid var(--border2);
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 0 40px rgba(79,195,247,0.08);
+}
+.result-card video {
+  width: 100%; display: block;
+  max-height: 480px; object-fit: contain;
+  background: #000;
+}
+.result-actions {
+  display: flex; gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.btn-primary {
+  flex: 1; min-width: 160px;
+  padding: 13px 20px;
+  background: var(--cyan); color: #050c14;
+  border: none; border-radius: var(--r);
+  font-family: var(--sans); font-size: 14px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: opacity 0.2s, transform 0.2s;
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-secondary {
+  flex: 1; min-width: 160px;
+  padding: 13px 20px;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border2); border-radius: var(--r);
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  cursor: pointer; transition: border-color 0.2s, color 0.2s;
+}
+.btn-secondary:hover { border-color: var(--accent-dim); color: var(--text); }
+
+/* ══ DOWNLOAD POPUP ══════════════════════════════════════════ */
+#dlOverlay {
+  position: fixed; inset: 0; z-index: 8888;
+  background: rgba(4,8,14,0.85);
+  backdrop-filter: blur(10px);
+  display: none; align-items: center; justify-content: center;
+  padding: 20px;
+}
+#dlOverlay.open { display: flex; }
+.dl-popup {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 36px 32px 28px;
+  max-width: 400px; width: 100%;
+  animation: popSlideIn 0.3s cubic-bezier(0.22,1,0.36,1);
+  position: relative;
+}
+.dl-popup h3 {
+  font-size: 20px; font-weight: 700;
+  color: var(--accent); margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+.dl-popup .dl-sub {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--muted); margin-bottom: 26px;
+}
+.dl-opt {
+  display: flex; align-items: center; gap: 16px;
+  width: 100%; padding: 16px 18px;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--r); cursor: pointer;
+  margin-bottom: 10px;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: var(--sans); color: var(--text);
+}
+.dl-opt:hover { border-color: var(--cyan); background: rgba(79,195,247,0.04); }
+.dl-opt .fmt {
+  font-family: var(--mono); font-size: 16px; font-weight: 700;
+  color: var(--cyan); width: 54px; flex-shrink: 0;
+}
+.dl-opt .fo-label { font-size: 14px; font-weight: 700; color: var(--accent); }
+.dl-opt .fo-desc  { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+.dl-cancel {
+  width: 100%; padding: 11px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--muted);
+  font-family: var(--sans); font-size: 13px; cursor: pointer;
+  margin-top: 4px; transition: border-color 0.2s;
+}
+.dl-cancel:hover { border-color: var(--muted); }
+
+/* ══ MOBILE OVERRIDES ════════════════════════════════════════ */
+body.mobile-mode header { padding: 16px 20px; }
+body.mobile-mode .main { padding: 36px 16px 60px; }
+body.mobile-mode .hero h1 { font-size: 34px; }
+body.mobile-mode .upload-area { padding: 40px 20px; }
+body.mobile-mode .card { padding: 22px 18px; }
+body.mobile-mode .result-actions { flex-direction: column; }
+body.mobile-mode .btn-primary,
+body.mobile-mode .btn-secondary { width: 100%; flex: none; }
+body.mobile-mode .dl-popup { padding: 28px 20px 22px; }
+body.mobile-mode header { padding: 14px 16px; }
+body.mobile-mode .device-popup { padding: 36px 20px 28px; }
+
+/* ══ NOTICE ══════════════════════════════════════════════════ */
+.notice {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 16px;
+  background: rgba(105,240,174,0.04);
+  border: 1px solid rgba(105,240,174,0.12);
+  border-radius: var(--r); margin-bottom: 20px;
+  font-size: 12px; color: var(--muted); font-family: var(--mono);
+  line-height: 1.6;
+}
+.notice .ni { color: var(--green); flex-shrink: 0; }
 </style>
 </head>
 <body>
 
-<!-- DEVICE POPUP -->
-<div class="popup-overlay" id="devicePopup">
-  <div class="popup-card">
-    <span class="popup-emoji">👋</span>
-    <h2>hey! i just need you to answer this <span>real quick</span></h2>
-    <p class="popup-subtitle">this WILL CHANGE how you view the site!</p>
-    <div class="device-options">
-      <button class="device-btn" onclick="setDevice('pc')">
-        <span class="icon">🖥️</span>
-        <div>
-          <div class="label">PC / Laptop</div>
-          <div class="sublabel">Full desktop experience with expanded layout</div>
-        </div>
-      </button>
-      <button class="device-btn" onclick="setDevice('mobile')">
-        <span class="icon">📱</span>
-        <div>
-          <div class="label">Mobile Device</div>
-          <div class="sublabel">Optimized for touchscreens, same output quality</div>
-        </div>
-      </button>
-    </div>
+<!-- ══ DEVICE SELECTION POPUP ═══════════════════════════════════════════ -->
+<div id="deviceOverlay">
+  <div class="device-popup">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="eye">// SYSTEM INIT</div>
+    <h2>hey! i just need you to answer this real quick,<br>this WILL CHANGE how you view the site!</h2>
+    <div class="sub">select your device to continue_</div>
+    <button class="device-btn" onclick="chooseDevice('pc')">
+      <span class="icon">🖥️</span>
+      <div>
+        <div class="lbl">PC / Laptop</div>
+        <div class="desc">full desktop experience</div>
+      </div>
+    </button>
+    <button class="device-btn" onclick="chooseDevice('mobile')">
+      <span class="icon">📱</span>
+      <div>
+        <div class="lbl">Mobile Device</div>
+        <div class="desc">touch-optimized layout</div>
+      </div>
+    </button>
   </div>
 </div>
 
-<!-- DOWNLOAD POPUP -->
-<div class="dl-popup-overlay" id="dlPopup" style="display:none">
-  <div class="dl-popup-card">
-    <h3>⬇️ Download Your Video</h3>
-    <p>Choose your preferred format below</p>
-    <div class="dl-options">
-      <button class="dl-option" onclick="downloadAs('mp4')">
-        <span class="fmt">MP4</span>
-        <div class="dl-info">
-          <div class="dl-name">MPEG-4 Video</div>
-          <div class="dl-sub">Best compatibility — works everywhere</div>
-        </div>
-      </button>
-      <button class="dl-option" onclick="downloadAs('webm')">
-        <span class="fmt">WEBM</span>
-        <div class="dl-info">
-          <div class="dl-name">WebM Video</div>
-          <div class="dl-sub">Smaller file size, great for web</div>
-        </div>
-      </button>
-      <button class="dl-option" onclick="downloadAs('mov')">
-        <span class="fmt">MOV</span>
-        <div class="dl-info">
-          <div class="dl-name">QuickTime Movie</div>
-          <div class="dl-sub">Best for Apple devices & editing</div>
-        </div>
-      </button>
-    </div>
-    <button class="dl-cancel" onclick="closeDlPopup()">Cancel</button>
+<!-- ══ DOWNLOAD POPUP ════════════════════════════════════════════════════ -->
+<div id="dlOverlay" onclick="if(event.target===this)closeDl()">
+  <div class="dl-popup">
+    <h3>Choose Format</h3>
+    <div class="dl-sub">// select output format to download_</div>
+    <button class="dl-opt" onclick="doDownload('mp4')">
+      <span class="fmt">.MP4</span>
+      <div>
+        <div class="fo-label">MP4 — H.264</div>
+        <div class="fo-desc">universal · works on all devices &amp; platforms</div>
+      </div>
+    </button>
+    <button class="dl-opt" onclick="doDownload('webm')">
+      <span class="fmt">.WEBM</span>
+      <div>
+        <div class="fo-label">WebM — VP8</div>
+        <div class="fo-desc">web-optimized · smaller file size</div>
+      </div>
+    </button>
+    <button class="dl-opt" onclick="doDownload('mov')">
+      <span class="fmt">.MOV</span>
+      <div>
+        <div class="fo-label">MOV — QuickTime</div>
+        <div class="fo-desc">apple devices · best for video editing</div>
+      </div>
+    </button>
+    <button class="dl-cancel" onclick="closeDl()">Cancel</button>
   </div>
 </div>
 
-<!-- PROCESSING ELEMENTS (HIDDEN) -->
-<video id="inputVideo" muted playsinline></video>
-<canvas id="processCanvas"></canvas>
-<audio id="customAudio"></audio>
+<!-- ══ HEADER ════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="logo">
+    <div class="logo-pulse"></div>
+    VFX<span style="color:var(--cyan)">AI</span>
+  </div>
+  <div class="header-tag">NODE GRAPH OVERLAY v1.0</div>
+</header>
 
-<div class="app" id="mainApp" style="opacity:0;pointer-events:none">
-
-  <header>
-    <div>
-      <div class="logo">VIZ<span>FX</span></div>
-      <div class="logo-tag"><span class="status-dot"></span>Video Effect Studio</div>
-    </div>
-    <div class="device-indicator" id="deviceIndicator" onclick="resetDevice()">🖥️ PC — tap to switch</div>
-  </header>
+<!-- ══ MAIN ══════════════════════════════════════════════════════════════ -->
+<main class="main">
 
   <div class="hero">
-    <h1>Make Your<br><span class="accent">Video</span> <span class="accent2">Cool</span></h1>
-    <p>Upload your clip and we'll apply real-time visual effects — motion lines, detection boxes, scanlines and more — right in your browser. No uploads to a server, ever.</p>
+    <div class="hero-label"><span></span> AI MOTION ANALYSIS</div>
+    <h1>Make Your<br>Video <em>Cool</em></h1>
+    <p>Upload any video and watch AI overlay a live node-graph tracking network — connecting motion points with glowing lines, just like the videos you've seen.</p>
   </div>
 
-  <div class="steps">
+  <!-- STEP 1: Upload -->
+  <div class="step-label">// 01 &nbsp; UPLOAD VIDEO</div>
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="videoInput" accept="video/mp4,video/quicktime,.mov,.mp4" />
+    <div class="upload-icon">📂</div>
+    <h3>Drop your video here</h3>
+    <p>MP4 or MOV &nbsp;·&nbsp; any resolution</p>
+    <div class="file-chip" id="fileChip"></div>
+  </div>
 
-    <!-- STEP 1: Upload Video -->
-    <div class="card" id="step1Card">
-      <div class="card-num">Step 01 — Video</div>
-      <h3>Upload Your Video</h3>
-      <div class="upload-zone" id="videoDropZone">
-        <input type="file" id="videoInput" accept="video/mp4,video/quicktime,.mov,.mp4">
-        <div class="upload-icon">🎬</div>
-        <div class="upload-label">Drop your video here</div>
-        <div class="upload-sub">MP4 or MOV supported</div>
+  <!-- STEP 2: Audio Option -->
+  <div class="step-label">// 02 &nbsp; AUDIO (OPTIONAL)</div>
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">// AUDIO SETTINGS</div>
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <div class="tlabel">Replace Audio Track</div>
+        <div class="tdesc">Remove the original audio and swap it with your own file. Your track will be cut to match the video length.</div>
       </div>
-      <div class="file-info" id="videoFileInfo" style="display:none">
-        <span>🎬</span>
-        <span class="name" id="videoFileName"></span>
-        <span class="remove" id="removeVideo">✕</span>
-      </div>
+      <button class="toggle-switch" id="audioToggle" onclick="toggleAudio()"></button>
     </div>
-
-    <!-- STEP 2: Pick Effect -->
-    <div class="card">
-      <div class="card-num">Step 02 — Style</div>
-      <h3>Choose Your Effect</h3>
-      <div class="effect-grid">
-        <div class="effect-option active" data-effect="motion" onclick="selectEffect(this)">
-          <span class="eff-icon">⚡</span>
-          Motion Lines + Boxes
-        </div>
-        <div class="effect-option" data-effect="cyber" onclick="selectEffect(this)">
-          <span class="eff-icon">🔷</span>
-          Cyber Grid Overlay
-        </div>
-        <div class="effect-option" data-effect="scan" onclick="selectEffect(this)">
-          <span class="eff-icon">📡</span>
-          Scanline Radar
-        </div>
-        <div class="effect-option" data-effect="glitch" onclick="selectEffect(this)">
-          <span class="eff-icon">👾</span>
-          Glitch + Data HUD
-        </div>
-      </div>
-    </div>
-
-    <!-- STEP 3: Audio (optional) -->
-    <div class="card">
-      <div class="card-num">Step 03 — Audio <em style="font-size:10px;color:var(--muted);font-style:normal">(optional)</em></div>
-      <div class="toggle-wrap">
+    <div class="audio-extra" id="audioExtra">
+      <button class="audio-pick">
+        <input type="file" id="audioInput" accept="audio/*" onchange="onAudioPick()" />
+        <span class="ap-icon">🎵</span>
         <div>
-          <div class="toggle-label">Replace Audio</div>
-          <div class="toggle-sub">Swap original audio with your own file</div>
+          <div class="ap-label">Upload Audio Track</div>
+          <div class="ap-sub">MP3 · WAV · AAC · OGG · any audio format</div>
         </div>
-        <label class="toggle">
-          <input type="checkbox" id="audioToggle" onchange="toggleAudio(this)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-      <div class="audio-upload-section" id="audioUploadSection">
-        <div class="upload-zone" id="audioDropZone">
-          <input type="file" id="audioInput" accept="audio/*">
-          <div class="upload-icon">🎵</div>
-          <div class="upload-label">Drop audio file here</div>
-          <div class="upload-sub">MP3, WAV, AAC, OGG supported</div>
-        </div>
-        <div class="file-info" id="audioFileInfo" style="display:none">
-          <span>🎵</span>
-          <span class="name" id="audioFileName"></span>
-          <span class="remove" id="removeAudio">✕</span>
-        </div>
-      </div>
+      </button>
+      <div id="audioName"></div>
     </div>
-
-    <!-- STEP 4: Summary -->
-    <div class="card" id="summaryCard">
-      <div class="card-num">Step 04 — Export</div>
-      <h3>Settings Summary</h3>
-      <div id="summaryContent" style="font-size:12px;color:var(--muted);line-height:2">
-        <div>📹 Video: <span id="sumVideo" style="color:var(--text)">None selected</span></div>
-        <div>🎨 Effect: <span id="sumEffect" style="color:var(--accent)">Motion Lines + Boxes</span></div>
-        <div>🎵 Audio: <span id="sumAudio" style="color:var(--text)">Original (keep)</span></div>
-        <div style="margin-top:12px;font-size:11px;padding:10px 12px;background:rgba(0,229,255,0.04);border:1px solid var(--border);border-radius:8px">
-          ⚡ Processing happens 100% in your browser — your video never leaves your device.
-        </div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- CTA -->
-  <div class="cta-wrap">
-    <button class="cta-btn" id="ctaBtn" onclick="startProcessing()" disabled>
-      ✨ Make My Video Cool
-    </button>
+  <!-- STEP 3: Convert -->
+  <div class="step-label">// 03 &nbsp; PROCESS</div>
+  <div class="notice">
+    <span class="ni">ℹ</span>
+    <span>All processing happens locally in your browser — nothing is uploaded to any server. Large videos may take a few minutes. Works best on videos under 3 minutes.</span>
   </div>
+  <button id="convertBtn" disabled onclick="startConvert()">
+    ⬡ &nbsp; Make My Video Cool
+  </button>
 
   <!-- PROGRESS -->
-  <div class="progress-wrap" id="progressWrap">
-    <div class="progress-bar">
-      <div class="progress-fill" id="progressFill"></div>
+  <div id="progressSection">
+    <div class="prog-header">
+      <span class="prog-label" id="progLabel">initializing...</span>
+      <span class="prog-pct" id="progPct">0%</span>
     </div>
-    <div class="progress-text" id="progressText">Initializing...</div>
+    <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+    <div class="prog-steps">
+      <div class="pchip" id="c1">DECODE</div>
+      <div class="pchip" id="c2">ANALYZE</div>
+      <div class="pchip" id="c3">OVERLAY</div>
+      <div class="pchip" id="c4">ENCODE</div>
+    </div>
   </div>
 
-  <!-- PREVIEW -->
-  <div class="preview-section" id="previewSection">
-    <div class="preview-header">
-      <h3>🎉 Your Video</h3>
-      <div class="badge">Ready to download</div>
+  <!-- RESULT -->
+  <div id="resultSection">
+    <div class="step-label" style="margin-bottom:14px;">// DONE — PREVIEW &amp; DOWNLOAD</div>
+    <div class="result-card">
+      <video id="resultVideo" controls playsinline></video>
     </div>
-    <video class="video-preview" id="outputVideo" controls playsinline></video>
-    <button class="download-btn" onclick="openDlPopup()">
-      ⬇️ Download Video
-    </button>
+    <div class="result-actions">
+      <button class="btn-primary" onclick="openDl()">⬇ &nbsp; Download</button>
+      <button class="btn-secondary" onclick="resetAll()">↩ &nbsp; Convert Another</button>
+    </div>
   </div>
 
-  <footer>Built with <span>♥</span> — All processing done locally in your browser. No servers. No uploads.
-  </footer>
-
-</div>
+</main>
 
 <script>
-// ── STATE ──
-let deviceMode = null;
-let selectedEffect = 'motion';
+/* ══════════════════════════════════════════════════════════════
+   DEVICE SETUP
+═══════════════════════════════════════════════════════════════ */
+function chooseDevice(type) {
+  document.getElementById('deviceOverlay').classList.add('hidden');
+  if (type === 'mobile') document.body.classList.add('mobile-mode');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FILE HANDLING
+═══════════════════════════════════════════════════════════════ */
 let videoFile = null;
 let audioFile = null;
-let outputBlob = null;
-let outputMimeType = 'video/webm';
-
-// ── DEVICE SELECTION ──
-function setDevice(type) {
-  deviceMode = type;
-  document.body.className = type;
-  document.getElementById('devicePopup').style.display = 'none';
-  const app = document.getElementById('mainApp');
-  app.style.opacity = '1';
-  app.style.pointerEvents = 'auto';
-  const ind = document.getElementById('deviceIndicator');
-  ind.textContent = type === 'pc' ? '🖥️ PC — tap to switch' : '📱 Mobile — tap to switch';
-}
-
-function resetDevice() {
-  document.getElementById('devicePopup').style.display = 'flex';
-  const app = document.getElementById('mainApp');
-  app.style.opacity = '0';
-  app.style.pointerEvents = 'none';
-}
-
-// ── EFFECT SELECTION ──
-function selectEffect(el) {
-  document.querySelectorAll('.effect-option').forEach(e => e.classList.remove('active'));
-  el.classList.add('active');
-  selectedEffect = el.dataset.effect;
-  updateSummary();
-}
-
-// ── AUDIO TOGGLE ──
-function toggleAudio(checkbox) {
-  const section = document.getElementById('audioUploadSection');
-  section.classList.toggle('visible', checkbox.checked);
-  updateSummary();
-}
-
-// ── FILE HANDLING ──
-function setupFileInput(inputId, zoneId, infoId, nameId, removeId, type) {
-  const input = document.getElementById(inputId);
-  const zone = document.getElementById(zoneId);
-  const info = document.getElementById(infoId);
-  const nameEl = document.getElementById(nameId);
-  const removeEl = document.getElementById(removeId);
-
-  function handleFile(file) {
-    if (!file) return;
-    if (type === 'video') { videoFile = file; }
-    else { audioFile = file; }
-    nameEl.textContent = file.name;
-    info.style.display = 'flex';
-    updateSummary();
-    updateCTA();
-  }
-
-  input.addEventListener('change', () => handleFile(input.files[0]));
-
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('drag-over');
-    handleFile(e.dataTransfer.files[0]);
-  });
-
-  removeEl.addEventListener('click', () => {
-    if (type === 'video') { videoFile = null; }
-    else { audioFile = null; }
-    input.value = '';
-    info.style.display = 'none';
-    updateSummary();
-    updateCTA();
-  });
-}
-
-setupFileInput('videoInput','videoDropZone','videoFileInfo','videoFileName','removeVideo','video');
-setupFileInput('audioInput','audioDropZone','audioFileInfo','audioFileName','removeAudio','audio');
-
-function updateSummary() {
-  document.getElementById('sumVideo').textContent = videoFile ? videoFile.name : 'None selected';
-  const effectLabels = {motion:'Motion Lines + Boxes',cyber:'Cyber Grid Overlay',scan:'Scanline Radar',glitch:'Glitch + Data HUD'};
-  document.getElementById('sumEffect').textContent = effectLabels[selectedEffect];
-  const audioOn = document.getElementById('audioToggle').checked;
-  document.getElementById('sumAudio').textContent = audioOn ? (audioFile ? audioFile.name : 'Waiting for file...') : 'Original (keep)';
-}
-
-function updateCTA() {
-  document.getElementById('ctaBtn').disabled = !videoFile;
-}
-
-// ── PROCESSING ──
-async function startProcessing() {
-  if (!videoFile) return;
-
-  const progressWrap = document.getElementById('progressWrap');
-  const progressFill = document.getElementById('progressFill');
-  const progressText = document.getElementById('progressText');
-  const previewSection = document.getElementById('previewSection');
-  const ctaBtn = document.getElementById('ctaBtn');
-
-  ctaBtn.disabled = true;
-  progressWrap.classList.add('visible');
-  previewSection.classList.remove('visible');
-  outputBlob = null;
-
-  setProgress(0, 'Loading video...');
-
-  const videoEl = document.getElementById('inputVideo');
-  const canvas = document.getElementById('processCanvas');
-  const ctx = canvas.getContext('2d');
-
-  videoEl.src = URL.createObjectURL(videoFile);
-
-  await new Promise(res => {
-    videoEl.onloadedmetadata = res;
-    videoEl.onerror = res;
-  });
-
-  const W = videoEl.videoWidth;
-  const H = videoEl.videoHeight;
-  canvas.width = W;
-  canvas.height = H;
-
-  setProgress(5, 'Setting up renderer...');
-
-  // Output stream from canvas
-  const canvasStream = canvas.captureStream(30);
-
-  // Audio handling
-  let audioStream = null;
-
-  const audioOn = document.getElementById('audioToggle').checked;
-  if (audioOn && audioFile) {
-    const audioEl = document.getElementById('customAudio');
-    audioEl.src = URL.createObjectURL(audioFile);
-    await new Promise(res => { audioEl.oncanplay = res; audioEl.onerror = res; });
-    // We'll mix audio in via AudioContext
-    const actx = new AudioContext();
-    const src = actx.createMediaElementSource(audioEl);
-    const dst = actx.createMediaStreamDestination();
-    src.connect(dst);
-    audioStream = dst.stream;
-  } else if (!audioOn) {
-    // Capture original audio from video
-    try {
-      const actx = new AudioContext();
-      const src2 = actx.createMediaElementSource(videoEl);
-      const dst2 = actx.createMediaStreamDestination();
-      src2.connect(dst2);
-      audioStream = dst2.stream;
-    } catch(e) { /* no audio */ }
-  }
-
-  // Combine streams
-  let combinedStream;
-  if (audioStream && audioStream.getAudioTracks().length > 0) {
-    combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioStream.getAudioTracks()]);
-  } else {
-    combinedStream = canvasStream;
-  }
-
-  // Pick codec
-  const mimeTypes = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
-  let mime = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
-  outputMimeType = mime;
-
-  const recorder = new MediaRecorder(combinedStream, { mimeType: mime, videoBitsPerSecond: 8000000 });
-  const chunks = [];
-  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-
-  recorder.start(100);
-
-  // Start playing
-  videoEl.currentTime = 0;
-  if (audioOn && audioFile) {
-    document.getElementById('customAudio').currentTime = 0;
-    document.getElementById('customAudio').play();
-  }
-  videoEl.play();
-
-  const duration = videoEl.duration;
-
-  // If custom audio, stop at video end
-  if (audioOn && audioFile) {
-    videoEl.onended = () => { document.getElementById('customAudio').pause(); };
-  }
-
-  // Frame-by-frame effect rendering
-  let prevFrame = null;
-  let time = 0;
-  let lastTimestamp = null;
-
-  function renderFrame(timestamp) {
-    if (!lastTimestamp) lastTimestamp = timestamp;
-    const elapsed = (timestamp - lastTimestamp) / 1000;
-    lastTimestamp = timestamp;
-
-    if (videoEl.paused || videoEl.ended) {
-      finishRecording();
-      return;
-    }
-
-    time += elapsed;
-    const progress = Math.min(videoEl.currentTime / duration, 1);
-    setProgress(5 + progress * 90, `Rendering... ${Math.round(progress * 100)}%`);
-
-    // Draw base frame
-    ctx.drawImage(videoEl, 0, 0, W, H);
-
-    // Apply selected effect
-    applyEffect(ctx, W, H, time, prevFrame);
-
-    // Save frame for motion detection
-    try {
-      prevFrame = ctx.getImageData(0, 0, W, H);
-    } catch(e) { prevFrame = null; }
-
-    requestAnimationFrame(renderFrame);
-  }
-
-  requestAnimationFrame(renderFrame);
-
-  function finishRecording() {
-    recorder.stop();
-    if (audioOn && audioFile) document.getElementById('customAudio').pause();
-
-    recorder.onstop = () => {
-      outputBlob = new Blob(chunks, { type: mime });
-      const url = URL.createObjectURL(outputBlob);
-      const outVid = document.getElementById('outputVideo');
-      outVid.src = url;
-      outVid.load();
-
-      setProgress(100, 'Done!');
-      setTimeout(() => {
-        progressWrap.classList.remove('visible');
-        previewSection.classList.add('visible');
-        previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        ctaBtn.disabled = false;
-      }, 600);
-    };
-  }
-}
-
-function setProgress(pct, text) {
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressText').textContent = text;
-}
-
-// ── EFFECTS ──
-function applyEffect(ctx, W, H, time, prevFrame) {
-  switch(selectedEffect) {
-    case 'motion': effectMotion(ctx, W, H, time, prevFrame); break;
-    case 'cyber': effectCyber(ctx, W, H, time); break;
-    case 'scan': effectScan(ctx, W, H, time); break;
-    case 'glitch': effectGlitch(ctx, W, H, time, prevFrame); break;
-  }
-}
-
-// EFFECT 1: Motion Lines + Bounding Boxes
-function effectMotion(ctx, W, H, time, prevFrame) {
-  const curFrame = ctx.getImageData(0, 0, W, H);
-  
-  // Detect motion regions
-  let motionRegions = [];
-  if (prevFrame) {
-    const step = 16;
-    for (let cy = step; cy < H - step; cy += step) {
-      for (let cx = step; cx < W - step; cx += step) {
-        let diff = 0;
-        for (let ky = -1; ky <= 1; ky++) {
-          for (let kx = -1; kx <= 1; kx++) {
-            const idx = ((cy + ky * 4) * W + (cx + kx * 4)) * 4;
-            const dr = curFrame.data[idx] - prevFrame.data[idx];
-            const dg = curFrame.data[idx+1] - prevFrame.data[idx+1];
-            const db = curFrame.data[idx+2] - prevFrame.data[idx+2];
-            diff += Math.sqrt(dr*dr + dg*dg + db*db);
-          }
-        }
-        if (diff > 180) motionRegions.push({ x: cx, y: cy });
-      }
-    }
-  }
-
-  // Draw scanning grid lines
-  ctx.save();
-  ctx.strokeStyle = 'rgba(0, 229, 255, 0.12)';
-  ctx.lineWidth = 1;
-  const gridSize = 48;
-  for (let x = 0; x < W; x += gridSize) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for (let y = 0; y < H; y += gridSize) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-
-  // Horizontal scan line
-  const scanY = (Math.sin(time * 0.8) * 0.5 + 0.5) * H;
-  const scanGrad = ctx.createLinearGradient(0, scanY - 20, 0, scanY + 20);
-  scanGrad.addColorStop(0, 'rgba(0,229,255,0)');
-  scanGrad.addColorStop(0.5, 'rgba(0,229,255,0.18)');
-  scanGrad.addColorStop(1, 'rgba(0,229,255,0)');
-  ctx.fillStyle = scanGrad;
-  ctx.fillRect(0, scanY - 20, W, 40);
-
-  // Draw motion boxes & lines
-  if (motionRegions.length > 0) {
-    // Cluster into groups
-    const clusters = clusterPoints(motionRegions, 64);
-    clusters.forEach((cl, i) => {
-      const mx = cl.cx, my = cl.cy;
-      const bw = cl.w + 32, bh = cl.h + 32;
-      const bx = mx - bw/2, by = my - bh/2;
-
-      // Box corners
-      const cornerLen = 14;
-      ctx.strokeStyle = 'rgba(0, 229, 255, 0.9)';
-      ctx.lineWidth = 2;
-
-      [[bx,by],[bx+bw,by],[bx,by+bh],[bx+bw,by+bh]].forEach(([cx,cy],ci) => {
-        const dx = ci%2===0?1:-1, dy = ci<2?1:-1;
-        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx*cornerLen,cy); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,cy+dy*cornerLen); ctx.stroke();
-      });
-
-      // Center crosshair
-      ctx.strokeStyle = 'rgba(0,229,255,0.5)';
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(mx-8,my); ctx.lineTo(mx+8,my); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(mx,my-8); ctx.lineTo(mx,my+8); ctx.stroke();
-
-      // Label
-      ctx.fillStyle = 'rgba(0,229,255,0.9)';
-      ctx.font = `bold 9px monospace`;
-      ctx.fillText(`OBJ_${String(i).padStart(3,'0')}`, bx + 4, by - 4);
-
-      // Motion trail line
-      const trailLen = 30;
-      ctx.strokeStyle = `rgba(0,229,255,${0.6 - i*0.1})`;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(mx, my);
-      ctx.lineTo(mx + Math.cos(time*2 + i) * trailLen, my + Math.sin(time*2 + i) * trailLen * 0.5);
-      ctx.stroke();
-    });
-  }
-
-  // Corner HUD elements
-  drawHUD(ctx, W, H, time, motionRegions.length);
-  ctx.restore();
-}
-
-// EFFECT 2: Cyber Grid
-function effectCyber(ctx, W, H, time) {
-  ctx.save();
-
-  // Pulsing grid
-  const pulse = Math.sin(time * 2) * 0.5 + 0.5;
-  ctx.strokeStyle = `rgba(123, 47, 255, ${0.15 + pulse * 0.08})`;
-  ctx.lineWidth = 1;
-
-  const gs = 36;
-  const offsetX = (time * 20) % gs;
-  const offsetY = (time * 12) % gs;
-
-  for (let x = -gs + offsetX; x < W + gs; x += gs) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for (let y = -gs + offsetY; y < H + gs; y += gs) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-
-  // Intersection dots
-  ctx.fillStyle = `rgba(123, 47, 255, ${0.3 + pulse * 0.3})`;
-  for (let x = offsetX; x < W; x += gs) {
-    for (let y = offsetY; y < H; y += gs) {
-      ctx.beginPath(); ctx.arc(x, y, 1.5, 0, Math.PI*2); ctx.fill();
-    }
-  }
-
-  // Diagonal accent lines
-  ctx.strokeStyle = `rgba(0,229,255,0.12)`;
-  ctx.lineWidth = 1;
-  for (let i = -H; i < W; i += 80) {
-    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + H, H); ctx.stroke();
-  }
-
-  // Center circle
-  ctx.strokeStyle = `rgba(123,47,255,${0.4 + pulse*0.4})`;
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([4, 8]);
-  ctx.beginPath();
-  ctx.arc(W/2, H/2, 60 + pulse * 10, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  drawHUD(ctx, W, H, time, 0);
-  ctx.restore();
-}
-
-// EFFECT 3: Scanline Radar
-function effectScan(ctx, W, H, time) {
-  ctx.save();
-
-  // Scanlines
-  for (let y = 0; y < H; y += 3) {
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.fillRect(0, y, W, 1);
-  }
-
-  // Sweeping radar line
-  const angle = (time * 1.2) % (Math.PI * 2);
-  const cx = W * 0.5, cy = H * 0.5;
-  const r = Math.sqrt(cx*cx + cy*cy);
-
-  const sweepGrad = ctx.createConicalGradient ? null : null;
-  // Fallback: draw sweep manually
-  for (let da = 0; da < Math.PI * 0.4; da += 0.04) {
-    const a = angle - da;
-    ctx.strokeStyle = `rgba(0, 229, 255, ${0.35 - da * 0.8})`;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
-    ctx.stroke();
-  }
-
-  // Radar tip bright dot
-  ctx.fillStyle = 'rgba(0,229,255,0.95)';
-  ctx.beginPath();
-  ctx.arc(cx + Math.cos(angle)*r*0.95, cy + Math.sin(angle)*r*0.95, 3, 0, Math.PI*2);
-  ctx.fill();
-
-  // Radar circles
-  [0.2,0.4,0.6,0.8].forEach(f => {
-    ctx.strokeStyle = 'rgba(0,229,255,0.08)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r*f, 0, Math.PI*2);
-    ctx.stroke();
-  });
-
-  // Vignette
-  const vig = ctx.createRadialGradient(cx, cy, r*0.3, cx, cy, r*1.2);
-  vig.addColorStop(0, 'rgba(0,0,0,0)');
-  vig.addColorStop(1, 'rgba(0,5,15,0.6)');
-  ctx.fillStyle = vig;
-  ctx.fillRect(0, 0, W, H);
-
-  drawHUD(ctx, W, H, time, 0);
-  ctx.restore();
-}
-
-// EFFECT 4: Glitch + Data HUD
-function effectGlitch(ctx, W, H, time, prevFrame) {
-  ctx.save();
-
-  // Random glitch slices
-  const glitchIntensity = Math.sin(time * 7) > 0.7 ? 1 : 0;
-  if (glitchIntensity) {
-    const numSlices = 5;
-    for (let i = 0; i < numSlices; i++) {
-      const sy = Math.random() * H;
-      const sh = 4 + Math.random() * 20;
-      const ox = (Math.random() - 0.5) * 30;
-      const imgData = ctx.getImageData(0, sy, W, sh);
-      ctx.putImageData(imgData, ox, sy);
-
-      // Color channel shift
-      ctx.globalCompositeOperation = 'screen';
-      ctx.fillStyle = 'rgba(255,0,60,0.08)';
-      ctx.fillRect(ox + 2, sy, W, sh);
-      ctx.globalCompositeOperation = 'source-over';
-    }
-  }
-
-  // Data stream columns
-  ctx.font = '9px monospace';
-  const cols = Math.floor(W / 14);
-  for (let c = 0; c < cols; c += 3) {
-    const x = c * 14;
-    const chars = '01アイウエオ#$%XYZABCDE'.split('');
-    const char = chars[Math.floor((time * 8 + c) * 3) % chars.length];
-    const alpha = 0.1 + Math.sin(time * 3 + c) * 0.08;
-    ctx.fillStyle = `rgba(0,229,255,${alpha})`;
-    const rows = Math.floor(H / 14);
-    for (let r = 0; r < rows; r += 4) {
-      ctx.fillText(char, x, r * 14 + ((time * 50 + c * 7) % (H)));
-    }
-  }
-
-  // Data overlays
-  const numBoxes = 4;
-  for (let i = 0; i < numBoxes; i++) {
-    const bx = (W * 0.1) + (W * 0.8 * i / numBoxes);
-    const by = H * 0.15 + Math.sin(time * 0.8 + i) * H * 0.05;
-    const bw = 90, bh = 28;
-    ctx.strokeStyle = 'rgba(0,229,255,0.5)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, by, bw, bh);
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(bx, by, bw, bh);
-    ctx.fillStyle = 'rgba(0,229,255,0.8)';
-    ctx.font = '9px monospace';
-    ctx.fillText(`SIG_${String(Math.floor(time*10+i*17)%999).padStart(3,'0')}`, bx+6, by+17);
-  }
-
-  drawHUD(ctx, W, H, time, 0);
-  ctx.restore();
-}
-
-// ── SHARED HUD ──
-function drawHUD(ctx, W, H, time, motionCount) {
-  ctx.font = '10px monospace';
-
-  // Top left
-  ctx.fillStyle = 'rgba(0,229,255,0.7)';
-  ctx.fillText('VIZ:FX // ACTIVE', 12, 20);
-  ctx.fillStyle = 'rgba(0,229,255,0.4)';
-  ctx.fillText(`T:${time.toFixed(2)}s`, 12, 34);
-  if (motionCount > 0) ctx.fillText(`OBJ:${motionCount}`, 12, 48);
-
-  // Top right
-  const ts = new Date().toISOString().substr(11,8);
-  const tw = ctx.measureText(ts).width;
-  ctx.fillStyle = 'rgba(0,229,255,0.5)';
-  ctx.fillText(ts, W - tw - 12, 20);
-
-  // Corner brackets
-  const cLen = 20, cOff = 8;
-  ctx.strokeStyle = 'rgba(0,229,255,0.4)';
-  ctx.lineWidth = 1.5;
-
-  // TL
-  ctx.beginPath(); ctx.moveTo(cOff,cOff+cLen); ctx.lineTo(cOff,cOff); ctx.lineTo(cOff+cLen,cOff); ctx.stroke();
-  // TR
-  ctx.beginPath(); ctx.moveTo(W-cOff-cLen,cOff); ctx.lineTo(W-cOff,cOff); ctx.lineTo(W-cOff,cOff+cLen); ctx.stroke();
-  // BL
-  ctx.beginPath(); ctx.moveTo(cOff,H-cOff-cLen); ctx.lineTo(cOff,H-cOff); ctx.lineTo(cOff+cLen,H-cOff); ctx.stroke();
-  // BR
-  ctx.beginPath(); ctx.moveTo(W-cOff-cLen,H-cOff); ctx.lineTo(W-cOff,H-cOff); ctx.lineTo(W-cOff,H-cOff-cLen); ctx.stroke();
-}
-
-// ── CLUSTER HELPER ──
-function clusterPoints(pts, radius) {
-  const clusters = [];
-  const used = new Set();
-
-  pts.forEach((p, i) => {
-    if (used.has(i)) return;
-    const cluster = [p];
-    used.add(i);
-
-    pts.forEach((q, j) => {
-      if (used.has(j)) return;
-      if (Math.abs(p.x - q.x) < radius && Math.abs(p.y - q.y) < radius) {
-        cluster.push(q);
-        used.add(j);
-      }
-    });
-
-    const minX = Math.min(...cluster.map(c=>c.x));
-    const maxX = Math.max(...cluster.map(c=>c.x));
-    const minY = Math.min(...cluster.map(c=>c.y));
-    const maxY = Math.max(...cluster.map(c=>c.y));
-
-    clusters.push({
-      cx: (minX+maxX)/2,
-      cy: (minY+maxY)/2,
-      w: maxX-minX,
-      h: maxY-minY,
-      count: cluster.length
-    });
-  });
-
-  return clusters.filter(c => c.count >= 1).slice(0, 6);
-}
-
-// ── DOWNLOAD ──
-function openDlPopup() {
-  if (!outputBlob) return;
-  document.getElementById('dlPopup').style.display = 'flex';
-}
-
-function closeDlPopup() {
-  document.getElementById('dlPopup').style.display = 'none';
-}
-
-function downloadAs(format) {
-  if (!outputBlob) return;
-
-  const mimeMap = {
-    mp4: 'video/mp4',
-    webm: 'video/webm',
-    mov: 'video/quicktime'
-  };
-
-  // Note: Browser MediaRecorder outputs WebM. MP4/MOV are aliased.
-  const blob = new Blob([outputBlob], { type: mimeMap[format] });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `vizfx_output.${format}`;
-  a.click();
-  URL.revokeObjectURL(url);
-  closeDlPopup();
-}
-
-// Close download popup on overlay click
-document.getElementById('dlPopup').addEventListener('click', function(e) {
-  if (e.target === this) closeDlPopup();
+let resultBlob = null;
+let audioOn = false;
+
+const videoInput  = document.getElementById('videoInput');
+const uploadArea  = document.getElementById('uploadArea');
+const fileChip    = document.getElementById('fileChip');
+const convertBtn  = document.getElementById('convertBtn');
+
+uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) setVideoFile(f);
 });
+videoInput.addEventListener('change', () => { if (videoInput.files[0]) setVideoFile(videoInput.files[0]); });
+
+function setVideoFile(f) {
+  videoFile = f;
+  uploadArea.classList.add('has-file');
+  fileChip.style.display = 'inline-block';
+  fileChip.textContent = '✓ ' + f.name;
+  convertBtn.disabled = false;
+}
+
+function toggleAudio() {
+  audioOn = !audioOn;
+  document.getElementById('audioToggle').classList.toggle('active', audioOn);
+  document.getElementById('audioExtra').classList.toggle('show', audioOn);
+}
+function onAudioPick() {
+  const f = document.getElementById('audioInput').files[0];
+  if (!f) return;
+  audioFile = f;
+  const el = document.getElementById('audioName');
+  el.style.display = 'block';
+  el.textContent = '✓ ' + f.name;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROGRESS HELPERS
+═══════════════════════════════════════════════════════════════ */
+function setProgress(pct, label, step) {
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progPct').textContent = Math.round(pct) + '%';
+  document.getElementById('progLabel').textContent = label;
+  ['c1','c2','c3','c4'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = 'pchip' + (i < step ? ' done' : i === step ? ' active' : '');
+  });
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ══════════════════════════════════════════════════════════════
+   MAIN CONVERT ENTRY
+═══════════════════════════════════════════════════════════════ */
+async function startConvert() {
+  if (!videoFile) return;
+  convertBtn.disabled = true;
+  document.getElementById('resultSection').classList.remove('show');
+  document.getElementById('progressSection').classList.add('show');
+  setProgress(2, 'loading video...', 0);
+
+  try {
+    resultBlob = await processVideo(videoFile, audioOn ? audioFile : null);
+    setProgress(100, 'complete!', 4);
+    await sleep(400);
+    showResult(resultBlob);
+  } catch(err) {
+    console.error(err);
+    setProgress(0, 'error: ' + err.message, -1);
+    convertBtn.disabled = false;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CORE VIDEO PROCESSING — NODE GRAPH OVERLAY
+═══════════════════════════════════════════════════════════════ */
+async function processVideo(srcFile, replaceAudioFile) {
+  /* — Load the source video — */
+  const srcURL = URL.createObjectURL(srcFile);
+  const vid = document.createElement('video');
+  vid.src = srcURL; vid.muted = true; vid.preload = 'auto';
+  await new Promise((res, rej) => {
+    vid.onloadedmetadata = res;
+    vid.onerror = rej;
+    vid.load();
+  });
+  await seekTo(vid, 0);
+
+  const W = vid.videoWidth;
+  const H = vid.videoHeight;
+  const FPS = 30;
+  const duration = vid.duration;
+  const totalFrames = Math.ceil(duration * FPS);
+
+  /* — Canvas setup — */
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  /* — Off-screen for pixel reading — */
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = W; offCanvas.height = H;
+  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+
+  /* — MediaRecorder setup — */
+  const mimeType = getSupportedMime();
+  const stream = canvas.captureStream(FPS);
+  const chunks = [];
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+  recorder.start(200);
+
+  /* — Node graph state — */
+  let nodes = [];          // { x, y, hexVal, life, vx, vy }
+  let prevLuma = null;
+  const MIN_DIST = 60;     // minimum distance between nodes
+
+  setProgress(8, 'decoding frames...', 0);
+
+  /* ── FRAME LOOP ── */
+  for (let fi = 0; fi < totalFrames; fi++) {
+    const t = fi / FPS;
+    vid.currentTime = t;
+    await seekTo(vid, t);
+
+    /* Draw source frame */
+    ctx.drawImage(vid, 0, 0, W, H);
+
+    /* Get luma for motion analysis */
+    offCtx.drawImage(vid, 0, 0, W, H);
+    const imgData = offCtx.getImageData(0, 0, W, H);
+    const luma = getLuma(imgData, W, H);
+
+    if (prevLuma) {
+      /* ── DETECT HIGH-MOTION AREAS ── */
+      const hotspots = findHotspots(luma, prevLuma, W, H);
+
+      /* ── SPAWN NEW NODES AT HOTSPOTS ── */
+      for (const hs of hotspots) {
+        /* Only spawn if not too close to existing nodes */
+        const tooClose = nodes.some(n => dist(n.x, n.y, hs.x, hs.y) < MIN_DIST);
+        if (!tooClose) {
+          nodes.push({
+            x: hs.x, y: hs.y,
+            hexVal: '0x' + Math.floor(Math.random() * 256).toString(16).toUpperCase().padStart(2, '0'),
+            life: 1.0,
+            targetX: hs.x + (Math.random() - 0.5) * 10,
+            targetY: hs.y + (Math.random() - 0.5) * 10,
+          });
+        }
+        /* Keep population bounded */
+        if (nodes.length > 12) break;
+      }
+
+      /* ── AGE NODES ── */
+      for (const n of nodes) {
+        n.life -= 0.018;
+        /* Drift toward target */
+        n.x += (n.targetX - n.x) * 0.05;
+        n.y += (n.targetY - n.y) * 0.05;
+        /* Re-check against current motion: boost life if still in hot area */
+        const li = (Math.floor(n.y) * W + Math.floor(n.x));
+        if (li >= 0 && li < luma.length && prevLuma[li] !== undefined) {
+          const d = Math.abs(luma[li] - prevLuma[li]);
+          if (d > 25) n.life = Math.min(1.0, n.life + 0.04);
+        }
+      }
+      nodes = nodes.filter(n => n.life > 0);
+
+      /* ── DRAW OVERLAY ── */
+      drawNodeGraph(ctx, nodes, W, H);
+    }
+
+    prevLuma = luma;
+
+    /* Progress */
+    const pct = 8 + (fi / totalFrames) * 85;
+    if (fi % 10 === 0) {
+      const step = fi < totalFrames * 0.25 ? 1 : fi < totalFrames * 0.75 ? 2 : 3;
+      setProgress(pct, `frame ${fi}/${totalFrames}`, step);
+      await sleep(0); /* yield to browser */
+    }
+  }
+
+  setProgress(93, 'encoding video...', 3);
+  recorder.stop();
+  await new Promise(r => { recorder.onstop = r; });
+
+  const videoBlob = new Blob(chunks, { type: mimeType });
+
+  /* ── AUDIO HANDLING ── */
+  if (replaceAudioFile) {
+    setProgress(96, 'mixing audio...', 3);
+    return await muxAudio(videoBlob, replaceAudioFile, duration);
+  } else {
+    /* Preserve original audio */
+    setProgress(96, 'preserving audio...', 3);
+    try {
+      return await muxAudio(videoBlob, srcFile, duration, true);
+    } catch(e) {
+      return videoBlob; /* fallback: silent */
+    }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FIND MOTION HOTSPOTS
+   Returns up to ~8 strong-motion coordinates
+═══════════════════════════════════════════════════════════════ */
+function findHotspots(luma, prev, W, H) {
+  /* Grid-sample the frame for motion, keep strongest cells */
+  const GRID = 10;
+  const cw = Math.floor(W / GRID);
+  const ch = Math.floor(H / GRID);
+  const cells = [];
+
+  for (let gy = 0; gy < GRID; gy++) {
+    for (let gx = 0; gx < GRID; gx++) {
+      let total = 0, count = 0;
+      for (let py = gy * ch; py < (gy + 1) * ch && py < H; py++) {
+        for (let px = gx * cw; px < (gx + 1) * cw && px < W; px++) {
+          const i = py * W + px;
+          total += Math.abs(luma[i] - prev[i]);
+          count++;
+        }
+      }
+      const avg = total / count;
+      if (avg > 28) { /* HIGH threshold — only major movement */
+        cells.push({ x: gx * cw + cw / 2, y: gy * ch + ch / 2, score: avg });
+      }
+    }
+  }
+
+  /* Sort by score descending, take top 6 */
+  cells.sort((a, b) => b.score - a.score);
+  return cells.slice(0, 6);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DRAW NODE GRAPH OVERLAY
+═══════════════════════════════════════════════════════════════ */
+function drawNodeGraph(ctx, nodes, W, H) {
+  if (nodes.length < 2) return;
+
+  ctx.save();
+
+  /* — Draw connecting lines between ALL nodes — */
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      const alpha = Math.min(a.life, b.life) * 0.75;
+      const d = dist(a.x, a.y, b.x, b.y);
+      /* Only draw lines within a reasonable range */
+      if (d > W * 0.8) continue;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.2;
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = 'rgba(220,240,255,0.8)';
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /* — Draw node squares + labels — */
+  for (const n of nodes) {
+    const alpha = n.life;
+    const sz = 8;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    /* Outer square */
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = 'rgba(200,230,255,0.9)';
+    ctx.strokeRect(n.x - sz, n.y - sz, sz * 2, sz * 2);
+
+    /* Inner bright fill flash */
+    ctx.fillStyle = 'rgba(220,240,255,0.12)';
+    ctx.fillRect(n.x - sz + 1, n.y - sz + 1, sz * 2 - 2, sz * 2 - 2);
+
+    /* Center dot */
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* Hex label */
+    ctx.shadowBlur = 0;
+    ctx.font = '9px "Share Tech Mono", monospace';
+    ctx.fillStyle = 'rgba(200,230,255,0.85)';
+    ctx.fillText(n.hexVal, n.x - sz, n.y - sz - 4);
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════════════ */
+function getLuma(imgData, W, H) {
+  const d = imgData.data;
+  const luma = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const p = i * 4;
+    luma[i] = 0.299 * d[p] + 0.587 * d[p+1] + 0.114 * d[p+2];
+  }
+  return luma;
+}
+
+function dist(ax, ay, bx, by) {
+  const dx = ax - bx, dy = ay - by;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function seekTo(vid, t) {
+  return new Promise(res => {
+    if (Math.abs(vid.currentTime - t) < 0.001) { res(); return; }
+    vid.onseeked = () => { vid.onseeked = null; res(); };
+    vid.currentTime = t;
+  });
+}
+
+function getSupportedMime() {
+  const types = [
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+  ];
+  return types.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   AUDIO MUXING
+   Combine processed video blob with an audio source
+═══════════════════════════════════════════════════════════════ */
+async function muxAudio(videoBlob, audioSource, maxDuration, isVideoSrc = false) {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const actx = new AudioContext();
+
+    const audioBuf = await actx.decodeAudioData(await audioSource.arrayBuffer());
+
+    const sampleRate = audioBuf.sampleRate;
+    const maxSamples = Math.floor(maxDuration * sampleRate);
+    const srcLen = Math.min(audioBuf.length, maxSamples);
+    const numCh = audioBuf.numberOfChannels;
+
+    const trimmed = actx.createBuffer(numCh, srcLen, sampleRate);
+    for (let c = 0; c < numCh; c++) {
+      trimmed.copyToChannel(audioBuf.getChannelData(c).slice(0, srcLen), c);
+    }
+
+    /* Encode trimmed audio to WAV */
+    const wavBlob = encodeWAV(trimmed);
+
+    /* Build a combined blob-URL using HTML5 video element */
+    /* We'll serve both blobs, then record the result */
+    return await combineVideoAudio(videoBlob, wavBlob, maxDuration);
+  } catch (e) {
+    console.warn('Audio mux failed, returning silent video:', e);
+    return videoBlob;
+  }
+}
+
+async function combineVideoAudio(videoBlob, audioBlob, duration) {
+  /* Create an invisible video element synced with an audio element,
+     capture them on a canvas, record the result */
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const actx = new AudioContext();
+
+  const vURL = URL.createObjectURL(videoBlob);
+  const aURL = URL.createObjectURL(audioBlob);
+
+  const v = document.createElement('video');
+  v.src = vURL; v.muted = false; v.volume = 1;
+
+  const a = document.createElement('audio');
+  a.src = aURL;
+
+  await new Promise(r => { v.onloadedmetadata = r; v.load(); });
+  await seekTo(v, 0);
+
+  const W = v.videoWidth, H = v.videoHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx2 = canvas.getContext('2d');
+
+  /* Connect audio to media stream destination */
+  const dest = actx.createMediaStreamDestination();
+  const audioEl = actx.createMediaElementSource(a);
+  audioEl.connect(dest);
+
+  /* Combine canvas video + audio destination tracks */
+  const canvasStream = canvas.captureStream(30);
+  const combined = new MediaStream([
+    ...canvasStream.getVideoTracks(),
+    ...dest.stream.getAudioTracks()
+  ]);
+
+  const mimeType = getSupportedMime();
+  const chunks2 = [];
+  const rec2 = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: 8_000_000 });
+  rec2.ondataavailable = e => { if (e.data.size > 0) chunks2.push(e.data); };
+  rec2.start(200);
+
+  v.play(); a.play();
+  await new Promise(r => setTimeout(r, (duration + 0.5) * 1000));
+
+  v.pause(); a.pause();
+  rec2.stop();
+  await new Promise(r => { rec2.onstop = r; });
+
+  return new Blob(chunks2, { type: mimeType });
+}
+
+/* Simple PCM → WAV encoder */
+function encodeWAV(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const numSamples = buffer.length;
+  const bytesPerSample = 2;
+  const blockAlign = numCh * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = numSamples * blockAlign;
+  const bufSize = 44 + dataSize;
+  const ab = new ArrayBuffer(bufSize);
+  const view = new DataView(ab);
+  let p = 0;
+  const wr = (v, n) => { for (let i=0;i<n;i++,p++) view.setUint8(p, v & 0xff, true), v >>= 8; };
+  const str = s => { for (let c of s) view.setUint8(p++, c.charCodeAt(0)); };
+  str('RIFF'); wr(bufSize - 8, 4); str('WAVE');
+  str('fmt '); wr(16,4); wr(1,2); wr(numCh,2); wr(sampleRate,4); wr(byteRate,4); wr(blockAlign,2); wr(16,2);
+  str('data'); wr(dataSize,4);
+  const interleaved = new Float32Array(numSamples * numCh);
+  for (let c = 0; c < numCh; c++) {
+    const ch = buffer.getChannelData(c);
+    for (let i = 0; i < numSamples; i++) interleaved[i * numCh + c] = ch[i];
+  }
+  for (let i = 0; i < interleaved.length; i++) {
+    const s = Math.max(-1, Math.min(1, interleaved[i]));
+    const v = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    view.setInt16(p, v, true); p += 2;
+  }
+  return new Blob([ab], { type: 'audio/wav' });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESULT & DOWNLOAD
+═══════════════════════════════════════════════════════════════ */
+function showResult(blob) {
+  const url = URL.createObjectURL(blob);
+  document.getElementById('resultVideo').src = url;
+  document.getElementById('progressSection').classList.remove('show');
+  document.getElementById('resultSection').classList.add('show');
+  document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  convertBtn.disabled = false;
+}
+
+function openDl() { document.getElementById('dlOverlay').classList.add('open'); }
+function closeDl() { document.getElementById('dlOverlay').classList.remove('open'); }
+
+function doDownload(fmt) {
+  if (!resultBlob) return;
+  closeDl();
+  /* All formats use the same webm blob from MediaRecorder —
+     we relabel the extension. MP4/MOV may not be natively writable
+     from the browser; the blob is webm under the hood regardless of extension. */
+  const ext = fmt;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(resultBlob);
+  a.download = 'vfxai-output.' + ext;
+  a.click();
+}
+
+function resetAll() {
+  videoFile = null; audioFile = null; resultBlob = null;
+  audioOn = false;
+  videoInput.value = '';
+  document.getElementById('audioInput').value = '';
+  document.getElementById('audioName').style.display = 'none';
+  document.getElementById('audioToggle').classList.remove('active');
+  document.getElementById('audioExtra').classList.remove('show');
+  uploadArea.classList.remove('has-file');
+  fileChip.style.display = 'none';
+  document.getElementById('progressSection').classList.remove('show');
+  document.getElementById('resultSection').classList.remove('show');
+  document.getElementById('resultVideo').src = '';
+  convertBtn.disabled = true;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 </script>
 </body>
 </html>
